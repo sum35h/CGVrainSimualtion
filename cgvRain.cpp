@@ -10,13 +10,14 @@
 #define WCY		480
 #define RAIN	0
 
-
+float ground_points[21][21][3];
+float ground_colors[21][21][4];
 float slowdown = 2.0;
 float velocity = 4.0;
 float zoom = -40.0;
 float pan = 0.0;
 float tilt = 0.0;
-float hailsize = 0.1;
+float hailsize = 0.05;
 
 void initRendering() {
 	glEnable(GL_DEPTH_TEST);
@@ -36,7 +37,7 @@ float angle = 0.0f;
 
 // actual vector representing the camera's direction
 float lx=0.0f,lz=-1.0f;
-
+int precipitation=0;
 // XZ position of the camera
 float x=0.0f, z=5.0f;
 
@@ -73,9 +74,9 @@ void initParticles(int i) {
     par_sys[i].life = 3;
     par_sys[i].fade = float(rand()%100)/1000.0f+0.003f;
 
-    par_sys[i].xpos = (float) (rand() % 500) - 10;
-    par_sys[i].ypos = 10;
-    par_sys[i].zpos = (float) (rand() % 500) - 10;
+    par_sys[i].xpos = (float) (rand() % 200) - 10;
+    par_sys[i].ypos = 50;
+    par_sys[i].zpos = (float) (rand() % 200) - 10;
 
     par_sys[i].red = 0.5;
     par_sys[i].green = 0.5;
@@ -83,6 +84,24 @@ void initParticles(int i) {
 
     par_sys[i].vel = 5;
     par_sys[i].gravity = -5;//-0.8;
+
+}
+particles par_sys2[MAX_PARTICLES];
+void initParticles2(int i) {
+    par_sys2[i].alive = true;
+    par_sys2[i].life = 3;
+    par_sys2[i].fade = float(rand()%100)/1000.0f+0.003f;
+
+    par_sys2[i].xpos = (float) (rand() % 200) - 10;
+    par_sys2[i].ypos = 50;
+    par_sys2[i].zpos = (float) (rand() % 200) - 10;
+
+    par_sys2[i].red = 0.5;
+    par_sys2[i].green = 0.5;
+    par_sys2[i].blue = 1.0;
+
+    par_sys2[i].vel = 1;
+    par_sys2[i].gravity = -3;//-0.8;
 
 }
 void changeSize(int w, int h) {
@@ -160,6 +179,114 @@ void drawRain() {
     }
   }
 }
+
+void drawRain2() {
+  float x, y, z;
+  for (loop = 0; loop < MAX_PARTICLES; loop=loop+2) {
+    if (par_sys2[loop].alive == true) {
+      x = par_sys2[loop].xpos;
+      y = par_sys2[loop].ypos;
+      z = par_sys2[loop].zpos + zoom;
+
+      // Draw particles
+      glColor3f(0.5, 0.5, 1.0);
+      glBegin(GL_LINES);
+        glVertex3f(x, y, z);
+        glVertex3f(x, y+0.5, z);
+      glEnd();
+
+      // Update values
+      //Move
+      // Adjust slowdown for speed!
+      par_sys2[loop].ypos += par_sys2[loop].vel / (slowdown*1000);
+      par_sys2[loop].vel += par_sys2[loop].gravity;
+      // Decay
+      par_sys2[loop].life -= par_sys2[loop].fade;
+
+      if (par_sys2[loop].ypos <= -10) {
+        par_sys2[loop].life = -1.0;
+      }
+      //Revive
+       if (par_sys[loop].ypos <= -10) {
+        int zi = z - zoom + 10;
+        int xi = x + 10;
+        ground_colors[zi][xi][0] = 1.0;
+        ground_colors[zi][xi][2] = 1.0;
+        ground_colors[zi][xi][3] += 1.0;
+        if (ground_colors[zi][xi][3] > 1.0) {
+          ground_points[xi][zi][1] += 0.1;
+        }
+        par_sys[loop].life = -1.0;
+      }
+
+      if (par_sys2[loop].life < 0.0) {
+        initParticles2(loop);
+      }
+    }
+  }
+}
+void drawHail() {
+  float x, y, z;
+
+  for (loop = 0; loop < MAX_PARTICLES; loop=loop+2) {
+    if (par_sys2[loop].alive == true) {
+      x = par_sys2[loop].xpos;
+      y = par_sys2[loop].ypos;
+      z = par_sys2[loop].zpos + zoom;
+
+      // Draw particles
+      glColor3f(0.8, 0.8, 0.9);
+      glBegin(GL_QUADS);
+        // Front
+        glVertex3f(x-hailsize, y-hailsize, z+hailsize); // lower left
+        glVertex3f(x-hailsize, y+hailsize, z+hailsize); // upper left
+        glVertex3f(x+hailsize, y+hailsize, z+hailsize); // upper right
+        glVertex3f(x+hailsize, y-hailsize, z+hailsize); // lower left
+        //Left
+        glVertex3f(x-hailsize, y-hailsize, z+hailsize);
+        glVertex3f(x-hailsize, y-hailsize, z-hailsize);
+        glVertex3f(x-hailsize, y+hailsize, z-hailsize);
+        glVertex3f(x-hailsize, y+hailsize, z+hailsize);
+        // Back
+        glVertex3f(x-hailsize, y-hailsize, z-hailsize);
+        glVertex3f(x-hailsize, y+hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y+hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y-hailsize, z-hailsize);
+        //Right
+        glVertex3f(x+hailsize, y+hailsize, z+hailsize);
+        glVertex3f(x+hailsize, y+hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y-hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y-hailsize, z+hailsize);
+        //Top
+        glVertex3f(x-hailsize, y+hailsize, z+hailsize);
+        glVertex3f(x-hailsize, y+hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y+hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y+hailsize, z+hailsize);
+        //Bottom
+        glVertex3f(x-hailsize, y-hailsize, z+hailsize);
+        glVertex3f(x-hailsize, y-hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y-hailsize, z-hailsize);
+        glVertex3f(x+hailsize, y-hailsize, z+hailsize);
+      glEnd();
+
+      // Update values
+      //Move
+      if (par_sys2[loop].ypos <= -10) {
+        par_sys2[loop].vel = par_sys2[loop].vel * -1;
+      }
+      par_sys2[loop].ypos += par_sys2[loop].vel / (slowdown*1000); // * 1000
+      par_sys2[loop].vel += par_sys2[loop].gravity;
+
+      // Decay
+      par_sys2[loop].life -= par_sys2[loop].fade;
+
+      //Revive
+      if (par_sys2[loop].life < 0.0) {
+        initParticles2(loop);
+      }
+    }
+  }
+}
 void renderScene(void) {
 
 	//Add ambient light
@@ -195,7 +322,7 @@ GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
 //		glVertex3f(-100.0f, 0.0f,  100.0f);
 //		glVertex3f( 100.0f, 0.0f,  100.0f);
 //		glVertex3f( 100.0f, 0.0f, -100.0f);
-		
+
 	
 		
 //	  glColor3f(0.0f,100.0f,0.0f);    // Color Blue
@@ -216,18 +343,18 @@ GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
     glVertex3f(-100000.0f,-10000.0f, 50.0f);    // Bottom Left Of The Quad (Front)
     glVertex3f( 100000.0f,-10000.0f,50.0f);    // Bottom Right Of The Quad (Front)
     //glColor3f(1.0f,1.0f,0.0f);    // Color Yellow
-    glColor3f(0.0f,15.0f,100.0f); 
+    glColor4f(0.0f,15.0f,100.0f,0); 
 	glVertex3f( 10000.0f,-10000.0f,-50.0f);    // Top Right Of The Quad (Back)
     glVertex3f(-10000.0f,-10000.000f,-50.0f);    // Top Left Of The Quad (Back)
     glVertex3f(-10000.0f, 10000.000f,-50.0f);    // Bottom Left Of The Quad (Back)
     glVertex3f( 10000.0f, 10000.000f,-50.0f);    // Bottom Right Of The Quad (Back)
-    glColor3f(0.0f,15.0f,100.0f);    // Color Blue
+    glColor4f(0.0f,15.0f,100.0f,0);  // Color Blue
     glVertex3f(-50.0f, 10000.0f, 10000.0f);    // Top Right Of The Quad (Left)
     glVertex3f(-50.0f, 10000.0f,-10000.0f);    // Top Left Of The Quad (Left)
     glVertex3f(-50.0f,-10000.0f,-10000.0f);    // Bottom Left Of The Quad (Left)
     glVertex3f(-50.0f,-10000.0f, 10000.0f);    // Bottom Right Of The Quad (Left)
     //glColor3f(100.0f,0.0f,100.0f);    // Color Violet
-    glColor3f(0.0f,15.0f,100.0f); 
+    glColor4f(0.0f,15.0f,100.0f,0); 
 	glVertex3f( 50.0f, 10000.0f,-10000.0f);    // Top Right Of The Quad (Right)
     glVertex3f( 50.0f, 10000.0f, 10000.0f);    // Top Left Of The Quad (Right)
     glVertex3f( 50.0f,-10000.0f, 10000.0f);    // Bottom Left Of The Quad (Right)
@@ -244,7 +371,21 @@ GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
                      drawbox();
                     glPopMatrix();
                }
+               
+               switch(precipitation)
+               {
+                case 0:
+                break;
+                case 1:
                 drawRain();
+                break;
+                case 2:
+                drawHail();
+                break;
+               }
+//              drawRain();
+//              //drawRain2();
+//                drawHail();
         glutSwapBuffers();
 } 
 
@@ -252,6 +393,17 @@ void processNormalKeys(unsigned char key, int xx, int yy) {
 
         if (key == 27)
               exit(0);
+              
+          if(key=='s')
+		   precipitation=0;
+		   
+		      if(key=='r')
+		   precipitation=1;
+		   
+		      if(key=='h')
+		   precipitation=2;
+		       
+              
 } 
 
 void pressKey(int key, int xx, int yy) {
@@ -310,6 +462,7 @@ int main(int argc, char **argv) {
 	initRendering();
 	glutCreateWindow("CGV-Rain Project");
    for (loop = 0; loop < MAX_PARTICLES; loop++) {
+        initParticles2(loop);
         initParticles(loop);
     }
 	// register callbacks

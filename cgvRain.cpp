@@ -16,6 +16,17 @@ float velocity = 4.0;
 float zoom = -40.0;
 float pan = 0.0;
 float tilt = 0.0;
+float hailsize = 0.1;
+
+void initRendering() {
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_LIGHTING); //Enable lighting
+	glEnable(GL_LIGHT0); //Enable light #0
+	glEnable(GL_LIGHT1); //Enable light #1
+	glEnable(GL_NORMALIZE); //Automatically normalize normals
+	//glShadeModel(GL_SMOOTH); //Enable smooth shading
+}
 
 
 int loop;
@@ -77,7 +88,7 @@ void initParticles(int i) {
 void changeSize(int w, int h) {
 
 	// Prevent a divide by zero, when window is too short
-	
+	// (you cant make a window of zero width).
 	if (h == 0)
 		h = 1;
 
@@ -101,11 +112,12 @@ void changeSize(int w, int h) {
 
 void drawbox() {
 
-	glColor3f(1.0f, 1.0f, 1.0f);
+	glColor3f(0.4f, 0.4f, 1.0f);
 
 // Draw Body
 	glTranslatef(0.0f ,0.75f, 0.0f);
-	glutSolidSphere(0.75f,20,20);
+	//glutSolidSphere(0.75f,20,20);
+	glutSolidCube(2);
 
 }
 
@@ -150,10 +162,21 @@ void drawRain() {
 }
 void renderScene(void) {
 
+	//Add ambient light
+GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
+	
+	GLfloat directedLight[] = {0.7f, 0.7f, 0.7f, 1.0f};
+	GLfloat directedLightPos[] = {-10.0f, 15.0f, 20.0f, 0.0f};
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, directedLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, directedLightPos);
+	
+		glEnable(GL_TEXTURE_2D);
+
 	if (deltaMove)
 		computePos(deltaMove);
 
-	
+	// Clear Color and Depth Buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Reset transformations
@@ -165,12 +188,50 @@ void renderScene(void) {
 
 // Draw ground
 
-	glColor3f(0.1f, 1, .7f);
+	
 	glBegin(GL_QUADS);
-		glVertex3f(-100.0f, 0.0f, -100.0f);
-		glVertex3f(-100.0f, 0.0f,  100.0f);
-		glVertex3f( 100.0f, 0.0f,  100.0f);
-		glVertex3f( 100.0f, 0.0f, -100.0f);
+	glColor3f(0.1f, 1, .7f);
+//		glVertex3f(-100.0f, 0.0f, -100.0f);
+//		glVertex3f(-100.0f, 0.0f,  100.0f);
+//		glVertex3f( 100.0f, 0.0f,  100.0f);
+//		glVertex3f( 100.0f, 0.0f, -100.0f);
+		
+	
+		
+//	  glColor3f(0.0f,100.0f,0.0f);    // Color Blue
+//    glVertex3f( 1000000.0f, 10000.0f,-10.0f);    // Top Right Of The Quad (Top)
+//    glVertex3f(-1000000.0f, 10000.0f,-10.0f);    // Top Left Of The Quad (Top)
+//    glVertex3f(-1000000.0f, 10000.0f, 10.0f);    // Bottom Left Of The Quad (Top)
+//    glVertex3f( 10000.0f, 10000.0f, 10.0f);    // Bottom Right Of The Quad (Top)
+   // glColor3f(1.0f,0.5f,0.0f);    // Color Orange
+   	glColor3f(0.1f, 1, .7f);
+    glVertex3f( 100.0f,0, 100.0f);    // Top Right Of The Quad (Bottom)
+    glVertex3f(-100.0f,0, 100.0f);    // Top Left Of The Quad (Bottom)
+    glVertex3f(-100.0f,0,-100.0f);    // Bottom Left Of The Quad (Bottom)
+    glVertex3f( 100.0f,0,-100.0f);    // Bottom Right Of The Quad (Bottom)
+    glColor3f(0.0f,15.0f,100.0f); 
+	//glColor3f(1.0f,0.0f,0.0f);    // Color Red    
+    glVertex3f( 100000.0f, 10000.0f, 50.0f);    // Top Right Of The Quad (Front)
+    glVertex3f(-100000.0f, 10000.0f, 50.0f);    // Top Left Of The Quad (Front)
+    glVertex3f(-100000.0f,-10000.0f, 50.0f);    // Bottom Left Of The Quad (Front)
+    glVertex3f( 100000.0f,-10000.0f,50.0f);    // Bottom Right Of The Quad (Front)
+    //glColor3f(1.0f,1.0f,0.0f);    // Color Yellow
+    glColor3f(0.0f,15.0f,100.0f); 
+	glVertex3f( 10000.0f,-10000.0f,-50.0f);    // Top Right Of The Quad (Back)
+    glVertex3f(-10000.0f,-10000.000f,-50.0f);    // Top Left Of The Quad (Back)
+    glVertex3f(-10000.0f, 10000.000f,-50.0f);    // Bottom Left Of The Quad (Back)
+    glVertex3f( 10000.0f, 10000.000f,-50.0f);    // Bottom Right Of The Quad (Back)
+    glColor3f(0.0f,15.0f,100.0f);    // Color Blue
+    glVertex3f(-50.0f, 10000.0f, 10000.0f);    // Top Right Of The Quad (Left)
+    glVertex3f(-50.0f, 10000.0f,-10000.0f);    // Top Left Of The Quad (Left)
+    glVertex3f(-50.0f,-10000.0f,-10000.0f);    // Bottom Left Of The Quad (Left)
+    glVertex3f(-50.0f,-10000.0f, 10000.0f);    // Bottom Right Of The Quad (Left)
+    //glColor3f(100.0f,0.0f,100.0f);    // Color Violet
+    glColor3f(0.0f,15.0f,100.0f); 
+	glVertex3f( 50.0f, 10000.0f,-10000.0f);    // Top Right Of The Quad (Right)
+    glVertex3f( 50.0f, 10000.0f, 10000.0f);    // Top Left Of The Quad (Right)
+    glVertex3f( 50.0f,-10000.0f, 10000.0f);    // Bottom Left Of The Quad (Right)
+    glVertex3f( 50.0f,-10000.0f,-10000.0f);
 	glEnd();
 
 
@@ -178,6 +239,7 @@ void renderScene(void) {
 	for(int i = -3; i < 3; i++)
 		for(int j=-3; j < 3; j++) {
                 glPushMatrix();
+                
                     glTranslatef(i*10.0,0,j * 10.0);
                      drawbox();
                     glPopMatrix();
@@ -240,11 +302,12 @@ void mouseButton(int button, int state, int x, int y) {
 
 int main(int argc, char **argv) {
 
-	
+	// init GLUT and create window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100,100);
 	glutInitWindowSize(320,320);
+	initRendering();
 	glutCreateWindow("CGV-Rain Project");
    for (loop = 0; loop < MAX_PARTICLES; loop++) {
         initParticles(loop);
@@ -259,14 +322,14 @@ int main(int argc, char **argv) {
 	glutSpecialFunc(pressKey);
 	glutSpecialUpFunc(releaseKey);
 
-	
+	// here are the two new functions
 	glutMouseFunc(mouseButton);
 	glutMotionFunc(mouseMove);
 
-	
+	// OpenGL init
 	glEnable(GL_DEPTH_TEST);
 
-	
+	// enter GLUT event processing cycle
 	glutMainLoop();
 
 	return 1;

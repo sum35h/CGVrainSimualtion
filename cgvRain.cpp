@@ -1,7 +1,8 @@
 
-#include <stdio.h>
+#include<iostream>
 #include <stdlib.h>
 #include <string.h>
+
 #include <math.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
@@ -9,7 +10,7 @@
 #define WCX		640
 #define WCY		480
 #define RAIN	0
-
+using namespace std;
 float ground_points[21][21][3];
 float ground_colors[21][21][4];
 float slowdown = 2.0;
@@ -21,14 +22,13 @@ float hailsize = 0.05;
 
 void initRendering() {
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_NORMALIZE);
 	glEnable(GL_COLOR_MATERIAL);
-	glEnable(GL_LIGHTING); //Enable lighting
-	glEnable(GL_LIGHT0); //Enable light #0
-	glEnable(GL_LIGHT1); //Enable light #1
-	glEnable(GL_NORMALIZE); //Automatically normalize normals
-	//glShadeModel(GL_SMOOTH); //Enable smooth shading
-}
+	 glEnable(GL_FOG);
 
+}
 
 int loop;
 int fall;
@@ -41,7 +41,7 @@ int precipitation=0;
 // XZ position of the camera
 float x=0.0f, z=5.0f;
 
-// the key states. These variables will be zero
+// the key states,These variables will be zero
 //when no key is being presses
 float deltaAngle = 0.0f;
 float deltaMove = 0;
@@ -50,7 +50,7 @@ typedef struct {
   // Life
   bool alive;	// is the particle alive?
   float life;	// particle lifespan
-  float fade; // decay
+  float fade; // decay(for hail only)
   // color
   float red;
   float green;
@@ -74,9 +74,9 @@ void initParticles(int i) {
     par_sys[i].life = 3;
     par_sys[i].fade = float(rand()%100)/1000.0f+0.003f;
 
-    par_sys[i].xpos = (float) (rand() % 200) - 10;
+    par_sys[i].xpos = (float) (rand() % 100) - 10;
     par_sys[i].ypos = 50;
-    par_sys[i].zpos = (float) (rand() % 200) - 10;
+    par_sys[i].zpos = (float) (rand() % 100) - 10;
 
     par_sys[i].red = 0.5;
     par_sys[i].green = 0.5;
@@ -87,27 +87,46 @@ void initParticles(int i) {
 
 }
 particles par_sys2[MAX_PARTICLES];
-void initParticles2(int i) {
-    par_sys2[i].alive = true;
-    par_sys2[i].life = 3;
-    par_sys2[i].fade = float(rand()%100)/1000.0f+0.003f;
+particles par_sys3[MAX_PARTICLES];
+void initParticlesMat(int i,particles par_sys[MAX_PARTICLES],int p,int q,int r,int s) {
+    par_sys[i].alive = true;
+    par_sys[i].life = 3;
+    par_sys[i].fade = float(rand()%100)/1000.0f+0.003f;
 
-    par_sys2[i].xpos = (float) (rand() % 200) - 10;
-    par_sys2[i].ypos = 50;
-    par_sys2[i].zpos = (float) (rand() % 200) - 10;
+    par_sys[i].xpos = (float) (rand() % q+p) - 10;
+    par_sys[i].ypos = 50;
+    par_sys[i].zpos = (float) (rand() % s+r) - 10;
 
-    par_sys2[i].red = 0.5;
-    par_sys2[i].green = 0.5;
-    par_sys2[i].blue = 1.0;
+    par_sys[i].red = 0.5;
+    par_sys[i].green = 0.5;
+    par_sys[i].blue = 1.0;
 
-    par_sys2[i].vel = 1;
-    par_sys2[i].gravity = -3;//-0.8;
+    par_sys[i].vel = 5;
+    par_sys[i].gravity = -3;//-0.8;
+
+}
+void initParticlesMatNegative(int i,particles par_sys[MAX_PARTICLES],int p,int q,int r,int s) {
+    par_sys[i].alive = true;
+    par_sys[i].life = 3;
+    par_sys[i].fade = float(rand()%100)/1000.0f+0.003f;
+
+     par_sys[i].xpos = (float) (rand() % 100) - 10;
+    par_sys[i].ypos = 50;
+    par_sys[i].zpos = (float) (rand() % 100) - 10;
+par_sys[i].xpos=par_sys[i].xpos*-1;
+par_sys[i].zpos=-1*par_sys[i].zpos ;
+    par_sys[i].red = 0.5;
+    par_sys[i].green = 0.5;
+    par_sys[i].blue = 1.0;
+
+    par_sys[i].vel = 5;
+    par_sys[i].gravity = -3;//-0.8;
 
 }
 void changeSize(int w, int h) {
 
 	// Prevent a divide by zero, when window is too short
-	// (you cant make a window of zero width).
+	
 	if (h == 0)
 		h = 1;
 
@@ -136,7 +155,13 @@ void drawbox() {
 // Draw Body
 	glTranslatef(0.0f ,0.75f, 0.0f);
 	//glutSolidSphere(0.75f,20,20);
-	glutSolidCube(2);
+//	glutSolidCube(2);
+	//glutSolidTetrahedron();
+	//glutSolidIcosahedron();
+		//glTranslatef(0.0f ,1.0f, 0.0f);
+	glutSolidOctahedron();
+//glutSolidDodecahedron();
+//glutSolidTeapot(2);
 
 }
 
@@ -144,6 +169,7 @@ void computePos(float deltaMove) {
 
 	x += deltaMove * lx * 0.1f;
 	z += deltaMove * lz * 0.1f;
+     cout<<x<<" "<<z<<endl;
 }
 // For Rain
 void drawRain() {
@@ -163,7 +189,7 @@ void drawRain() {
 
       // Update values
       //Move
-      // Adjust slowdown for speed!
+      // Adjust slowdown for speed
       par_sys[loop].ypos += par_sys[loop].vel / (slowdown*1000);
       par_sys[loop].vel += par_sys[loop].gravity;
       // Decay
@@ -180,19 +206,20 @@ void drawRain() {
   }
 }
 
-void drawRain2() {
+void drawRainMat(particles par_sys2[]) {
   float x, y, z;
   for (loop = 0; loop < MAX_PARTICLES; loop=loop+2) {
     if (par_sys2[loop].alive == true) {
-      x = par_sys2[loop].xpos;
+      x = par_sys2[loop].xpos*-1;
       y = par_sys2[loop].ypos;
-      z = par_sys2[loop].zpos + zoom;
+      z = par_sys2[loop].zpos*-1 + zoom;
 
       // Draw particles
       glColor3f(0.5, 0.5, 1.0);
       glBegin(GL_LINES);
         glVertex3f(x, y, z);
         glVertex3f(x, y+0.5, z);
+      
       glEnd();
 
       // Update values
@@ -220,11 +247,58 @@ void drawRain2() {
       }
 
       if (par_sys2[loop].life < 0.0) {
-        initParticles2(loop);
+        initParticlesMat(loop,par_sys2,0,200,100,200);
       }
     }
   }
 }
+void drawRainMatNegative(particles par_sys2[]) {
+  float x, y, z;
+  for (loop = 0; loop < MAX_PARTICLES; loop=loop+2) {
+    if (par_sys2[loop].alive == true) {
+      x = par_sys2[loop].xpos;
+      y = par_sys2[loop].ypos;
+      z = -1*par_sys2[loop].zpos + zoom;
+
+      // Draw particles
+      glColor3f(0.5, 0.5, 1.0);
+      glBegin(GL_LINES);
+        glVertex3f(x, y, z);
+        glVertex3f(x, y+0.5, z);
+     
+      glEnd();
+
+      // Update values
+      //Move
+      // Adjust slowdown for speed!
+      par_sys2[loop].ypos += par_sys2[loop].vel / (slowdown*1000);
+      par_sys2[loop].vel += par_sys2[loop].gravity;
+      // Decay
+      par_sys2[loop].life -= par_sys2[loop].fade;
+
+      if (par_sys2[loop].ypos <= -10) {
+        par_sys2[loop].life = -1.0;
+      }
+      //Revive
+       if (par_sys[loop].ypos <= -10) {
+        int zi = z - zoom + 10;
+        int xi = x + 10;
+        ground_colors[zi][xi][0] = 1.0;
+        ground_colors[zi][xi][2] = 1.0;
+        ground_colors[zi][xi][3] += 1.0;
+        if (ground_colors[zi][xi][3] > 1.0) {
+          ground_points[xi][zi][1] += 0.1;
+        }
+        par_sys[loop].life = -1.0;
+      }
+
+      if (par_sys2[loop].life < 0.0) {
+        initParticlesMatNegative(loop,par_sys3,0,100,0,100);
+      }
+    }
+  }
+}
+
 void drawHail() {
   float x, y, z;
 
@@ -281,24 +355,31 @@ void drawHail() {
       par_sys2[loop].life -= par_sys2[loop].fade;
 
       //Revive
-      if (par_sys2[loop].life < 0.0) {
-        initParticles2(loop);
-      }
+//      if (par_sys2[loop].life < 0.0) {
+//         initParticlesMat(loop,par_sys2);
+//      }
     }
   }
 }
 void renderScene(void) {
 
-	//Add ambient light
-GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
+	/////FOG/////
+	 GLfloat fogColor[] = {0.5f, 2.0f,8.0f, 1};
+    glFogfv(GL_FOG_COLOR, fogColor);
+    glFogi(GL_FOG_MODE, GL_LINEAR);
+    glFogf(GL_FOG_START, 10.0f);
+    glFogf(GL_FOG_END, 20.0f);
+    
+    //LIGHTING
+	  GLfloat ambientLight[] = {0.1f, 0.1f, 0.1f, 1.0f};
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
 	
-	GLfloat directedLight[] = {0.7f, 0.7f, 0.7f, 1.0f};
-	GLfloat directedLightPos[] = {-10.0f, 15.0f, 20.0f, 0.0f};
+	GLfloat directedLight[] = {0.7f, 0.7f, 0.7f,0.5f};
+	GLfloat directedLightPos[] = {1,60.0f,z, 30.0f};
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, directedLight);
 	glLightfv(GL_LIGHT0, GL_POSITION, directedLightPos);
 	
-		glEnable(GL_TEXTURE_2D);
+	
 
 	if (deltaMove)
 		computePos(deltaMove);
@@ -336,6 +417,7 @@ GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
     glVertex3f(-100.0f,0, 100.0f);    // Top Left Of The Quad (Bottom)
     glVertex3f(-100.0f,0,-100.0f);    // Bottom Left Of The Quad (Bottom)
     glVertex3f( 100.0f,0,-100.0f);    // Bottom Right Of The Quad (Bottom)
+    
     glColor3f(0.0f,15.0f,100.0f); 
 	//glColor3f(1.0f,0.0f,0.0f);    // Color Red    
     glVertex3f( 100000.0f, 10000.0f, 50.0f);    // Top Right Of The Quad (Front)
@@ -365,6 +447,7 @@ GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
 
 	for(int i = -3; i < 3; i++)
 		for(int j=-3; j < 3; j++) {
+	
                 glPushMatrix();
                 
                     glTranslatef(i*10.0,0,j * 10.0);
@@ -377,10 +460,14 @@ GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
                 case 0:
                 break;
                 case 1:
-                drawRain();
+                //drawRain();
+                //drawRainMat(par_sys2);
+                drawRainMatNegative(par_sys3);
+                  drawRain();
                 break;
                 case 2:
-                drawHail();
+                //drawHail();
+                drawRain();
                 break;
                }
 //              drawRain();
@@ -451,7 +538,17 @@ void mouseButton(int button, int state, int x, int y) {
 		}
 	}
 }
-
+//////////////
+void menu(int id)
+{
+	if(id==3)
+	{
+		exit(0);
+	}
+	
+	glutPostRedisplay();
+}
+////////////
 int main(int argc, char **argv) {
 
 	// init GLUT and create window
@@ -459,13 +556,15 @@ int main(int argc, char **argv) {
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100,100);
 	glutInitWindowSize(320,320);
-	initRendering();
+	
 	glutCreateWindow("CGV-Rain Project");
    for (loop = 0; loop < MAX_PARTICLES; loop++) {
-        initParticles2(loop);
+        initParticlesMat(loop,par_sys2,0,200,100,200);
         initParticles(loop);
+        initParticlesMatNegative(loop,par_sys3,1,200,0,100);
     }
-	// register callbacks
+	initRendering();
+	
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(changeSize);
 	glutIdleFunc(renderScene);
@@ -475,10 +574,32 @@ int main(int argc, char **argv) {
 	glutSpecialFunc(pressKey);
 	glutSpecialUpFunc(releaseKey);
 
-	// here are the two new functions
+	//mouse events
 	glutMouseFunc(mouseButton);
 	glutMotionFunc(mouseMove);
+/////////////menu/////////////////Will bind the options later....
+int rain_ch=glutCreateMenu(menu);
+    
+	glutAddMenuEntry("increase",1);
+	glutAddMenuEntry("decrease",2);
+    glutAddMenuEntry("start ",1);
+    	int prec_ch=glutCreateMenu(menu);
+    	 glutAddSubMenu("Rain",rain_ch);
+    	glutCreateMenu(menu);
+    	
+		int effect_ch=glutCreateMenu(menu);
+        glutAddMenuEntry("Fog",1);
+    	glutAddMenuEntry("Lighting",2);
+    	
+    glutCreateMenu(menu);
+    glutAddSubMenu("Precipitation",prec_ch);
+    glutAddSubMenu("Effects",effect_ch);
+	
+      
+	  
+	  glutAttachMenu(GLUT_RIGHT_BUTTON);
 
+//////////////////////////////
 	// OpenGL init
 	glEnable(GL_DEPTH_TEST);
 

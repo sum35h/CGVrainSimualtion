@@ -22,11 +22,11 @@ float hailsize = 0.05;
 
 void initRendering() {
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_NORMALIZE);
+//	glEnable(GL_LIGHTING);
+//	glEnable(GL_LIGHT0);
+//	glEnable(GL_NORMALIZE);
 	glEnable(GL_COLOR_MATERIAL);
-	 glEnable(GL_FOG);
+//	 glEnable(GL_FOG);
 
 }
 
@@ -67,7 +67,7 @@ typedef struct {
 
 // Paticle System
 particles par_sys[MAX_PARTICLES];
-
+int rain_vel=3;
 // Initialize/Reset Particles - give them their attributes
 void initParticles(int i) {
     par_sys[i].alive = true;
@@ -82,7 +82,7 @@ void initParticles(int i) {
     par_sys[i].green = 0.5;
     par_sys[i].blue = 1.0;
 
-    par_sys[i].vel = 5;
+    par_sys[i].vel = rain_vel;
     par_sys[i].gravity = -5;//-0.8;
 
 }
@@ -101,7 +101,7 @@ void initParticlesMat(int i,particles par_sys[MAX_PARTICLES],int p,int q,int r,i
     par_sys[i].green = 0.5;
     par_sys[i].blue = 1.0;
 
-    par_sys[i].vel = 5;
+    par_sys[i].vel = rain_vel;
     par_sys[i].gravity = -3;//-0.8;
 
 }
@@ -119,7 +119,7 @@ par_sys[i].zpos=-1*par_sys[i].zpos ;
     par_sys[i].green = 0.5;
     par_sys[i].blue = 1.0;
 
-    par_sys[i].vel = 5;
+    par_sys[i].vel =rain_vel;
     par_sys[i].gravity = -3;//-0.8;
 
 }
@@ -361,14 +361,21 @@ void drawHail() {
     }
   }
 }
+int fogOn=0;//enable ,disable fog
+int lightOn=0;//enable ,disable light
+
+
+
 void renderScene(void) {
 
 	/////FOG/////
+	
 	 GLfloat fogColor[] = {0.5f, 2.0f,8.0f, 1};
     glFogfv(GL_FOG_COLOR, fogColor);
     glFogi(GL_FOG_MODE, GL_LINEAR);
     glFogf(GL_FOG_START, 10.0f);
-    glFogf(GL_FOG_END, 20.0f);
+  glFogf(GL_FOG_END, 20.0f);
+    
     
     //LIGHTING
 	  GLfloat ambientLight[] = {0.1f, 0.1f, 0.1f, 1.0f};
@@ -458,6 +465,7 @@ void renderScene(void) {
                switch(precipitation)
                {
                 case 0:
+                //No Precipitation
                 break;
                 case 1:
                 //drawRain();
@@ -541,11 +549,67 @@ void mouseButton(int button, int state, int x, int y) {
 //////////////
 void menu(int id)
 {
-	if(id==3)
+	if(id==0)
 	{
 		exit(0);
 	}
 	
+	glutPostRedisplay();
+}
+void menu_effect(int id)
+{
+	if(id==1)
+	{
+//		glEnable(GL_DEPTH_TEST);
+//	glEnable(GL_LIGHTING);
+//	glEnable(GL_LIGHT0);
+//	glEnable(GL_NORMALIZE);
+//	glEnable(GL_COLOR_MATERIAL);
+if(fogOn==1)
+{
+	 glDisable(GL_FOG);
+	 fogOn=0;
+	 }
+	 else
+	 {
+	 glEnable(GL_FOG);
+	 fogOn=1;
+	 }
+	}
+	else	if(id==2)
+	{
+
+			if(lightOn==1)
+			{
+			 glDisable(GL_LIGHTING);
+			 glDisable(GL_LIGHT0);
+	 		lightOn=0;
+	 		}
+	 	else
+	 		{
+	 		glEnable(GL_LIGHTING);
+     		glEnable(GL_LIGHT0);
+	 		lightOn=1;
+	 	}
+	}
+	glutPostRedisplay();
+}
+void menu_rain(int id)
+{
+	if(id==0)
+	{
+		precipitation=1;
+	}
+	if(id==1)
+	{
+		precipitation=0;
+	}if(id==2)
+	{
+		rain_vel+=1;
+	}if(id==3)
+	{
+		rain_vel-=1;
+	}
 	glutPostRedisplay();
 }
 ////////////
@@ -554,8 +618,8 @@ int main(int argc, char **argv) {
 	// init GLUT and create window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowPosition(100,100);
-	glutInitWindowSize(320,320);
+	glutInitWindowPosition(420,320);
+	glutInitWindowSize(720,480);
 	
 	glutCreateWindow("CGV-Rain Project");
    for (loop = 0; loop < MAX_PARTICLES; loop++) {
@@ -578,22 +642,24 @@ int main(int argc, char **argv) {
 	glutMouseFunc(mouseButton);
 	glutMotionFunc(mouseMove);
 /////////////menu/////////////////Will bind the options later....
-int rain_ch=glutCreateMenu(menu);
+int rain_ch=glutCreateMenu(menu_rain);
+    glutAddMenuEntry("start ",0);
+    glutAddMenuEntry("stop ",1);
+	glutAddMenuEntry("increase velocity",2);
+	glutAddMenuEntry("decrease velocity",3);
     
-	glutAddMenuEntry("increase",1);
-	glutAddMenuEntry("decrease",2);
-    glutAddMenuEntry("start ",1);
     	int prec_ch=glutCreateMenu(menu);
     	 glutAddSubMenu("Rain",rain_ch);
     	glutCreateMenu(menu);
     	
-		int effect_ch=glutCreateMenu(menu);
+		int effect_ch=glutCreateMenu(menu_effect);
         glutAddMenuEntry("Fog",1);
     	glutAddMenuEntry("Lighting",2);
     	
     glutCreateMenu(menu);
     glutAddSubMenu("Precipitation",prec_ch);
     glutAddSubMenu("Effects",effect_ch);
+    glutAddMenuEntry("Exit",0);
 	
       
 	  

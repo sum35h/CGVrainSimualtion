@@ -199,17 +199,7 @@ void drawRainMatNegative(particles par_sys2[]) {
         par_sys2[loop].life = -1.0;
       }
       //Revive
-       if (par_sys[loop].ypos <= -10) {
-        int zi = z - zoom + 10;
-        int xi = x + 10;
-        ground_colors[zi][xi][0] = 1.0;
-        ground_colors[zi][xi][2] = 1.0;
-        ground_colors[zi][xi][3] += 1.0;
-        if (ground_colors[zi][xi][3] > 1.0) {
-          ground_points[xi][zi][1] += 0.1;
-        }
-        par_sys[loop].life = -1.0;
-      }
+    
 
       if (par_sys2[loop].life < 0.0) {
         initParticlesMatNegative(loop,par_sys3);
